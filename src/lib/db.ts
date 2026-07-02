@@ -19,20 +19,25 @@ interface KaraokeDB extends DBSchema {
 const DB_NAME = 'karaoke-br-player';
 const DB_VERSION = 2;
 
+let dbPromise: any = null;
+
 async function getDB() {
-  return openDB<KaraokeDB>(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion, newVersion) {
-      if (!db.objectStoreNames.contains('projects')) {
-        db.createObjectStore('projects', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('audioBlobs')) {
-        db.createObjectStore('audioBlobs');
-      }
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings');
-      }
-    },
-  });
+  if (!dbPromise) {
+    dbPromise = openDB<KaraokeDB>(DB_NAME, DB_VERSION, {
+      upgrade(db, oldVersion, newVersion) {
+        if (!db.objectStoreNames.contains('projects')) {
+          db.createObjectStore('projects', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('audioBlobs')) {
+          db.createObjectStore('audioBlobs');
+        }
+        if (!db.objectStoreNames.contains('settings')) {
+          db.createObjectStore('settings');
+        }
+      },
+    });
+  }
+  return dbPromise;
 }
 
 export const dbService = {

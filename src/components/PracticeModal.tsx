@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Mic, X, Play, RotateCcw, ArrowRight, CheckCircle2, AlertCircle, Volume2, Award } from "lucide-react";
 import { SongLine } from "../types";
@@ -168,9 +168,7 @@ const alignSentences = (originalStr: string, spokenStr: string): WordStatus[] =>
   return statusList;
 };
 
-const accuracyScoreFromSpoken = (spoken: string, original: string) => {
-  if (!spoken) return 0;
-  const currentAlignment = alignSentences(original, spoken);
+const accuracyScoreFromAlignment = (currentAlignment: WordStatus[]): number => {
   const total = currentAlignment.length;
   if (total === 0) return 0;
   
@@ -181,6 +179,12 @@ const accuracyScoreFromSpoken = (spoken: string, original: string) => {
   });
   
   return Math.round((scorePoints / total) * 100);
+};
+
+const accuracyScoreFromSpoken = (spoken: string, original: string) => {
+  if (!spoken) return 0;
+  const currentAlignment = alignSentences(original, spoken);
+  return accuracyScoreFromAlignment(currentAlignment);
 };
 
 interface PracticeModalProps {
@@ -287,15 +291,25 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
       };
 
       const now = audioCtx.currentTime;
+      let lastEnd = now;
       if (score === 100) {
         playNote(523.25, now, 0.4);       // C5
         playNote(659.25, now + 0.1, 0.4); // E5
         playNote(783.99, now + 0.2, 0.4); // G5
         playNote(1046.50, now + 0.3, 0.6); // C6
+        lastEnd = now + 0.3 + 0.6;
       } else if (score >= 70) {
         playNote(392.00, now, 0.3);       // G4
         playNote(523.25, now + 0.15, 0.5); // C5
+        lastEnd = now + 0.15 + 0.5;
       }
+
+      // Close the context after notes finish playing
+      setTimeout(() => {
+        if (audioCtx.state !== "closed") {
+          audioCtx.close().catch(() => {});
+        }
+      }, (lastEnd - now) * 1000 + 100);
     } catch (e) {
       console.error("Failed to play sound feedback", e);
     }
@@ -362,10 +376,13 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
     }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      mediaStreamRef.current = null;
     }
     if (audioContextRef.current) {
       audioContextRef.current.close().catch(console.error);
+      audioContextRef.current = null;
     }
+    analyzerRef.current = null;
     setVolumes(new Array(20).fill(0));
   };
 
@@ -394,11 +411,13 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
     window.speechSynthesis.speak(utterance);
   };
 
-  const accuracyScore = () => {
-    return accuracyScoreFromSpoken(transcript, line.original);
-  };
+  const alignment = useMemo(() => {
+    return alignSentences(line.original, transcript);
+  }, [line.original, transcript]);
 
-  const alignment = alignSentences(line.original, transcript);
+  const accuracyScoreValue = useMemo(() => {
+    return accuracyScoreFromAlignment(alignment);
+  }, [alignment]);
 
   const handleRate = (rating: 1 | 2 | 3 | 4) => {
     if (onSelfRate) onSelfRate(rating);
@@ -536,7 +555,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
                     {feedback === "poor" && <><X className="w-4 h-4" /> Tente novamente!</>}
                   </div>
                   <span className="text-[10px] text-neutral-500 font-mono tracking-widest uppercase mt-0.5">
-                    Pontuação: {accuracyScore()}%
+                    Pontuação: {accuracyScoreValue}%
                   </span>
                 </div>
               )}
