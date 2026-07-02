@@ -179,6 +179,81 @@ const SKILL_DISPLAY_NAMES: Record<string, { title: string; subtitle: string; emo
     title: "Consoantes Finais",
     subtitle: "Pronúncia nítida de consoantes no fim das palavras, evitando adicionar sons vocálicos extras (como 'e' mudo).",
     emoji: "🔤"
+  },
+  "th": {
+    title: "Sons do TH",
+    subtitle: "Prática do som de 'th' com a língua entre os dentes, tanto surdo (thin) quanto sonoro (the).",
+    emoji: "👅"
+  },
+  "voicing": {
+    title: "Vozeamento (Voz vs Sopro)",
+    subtitle: "Diferenciação entre sons que vibram as cordas vocais (sonoros, ex: Z, V) e sons sem vibração (surdos, ex: S, F).",
+    emoji: "🎵"
+  },
+  "vowel_length": {
+    title: "Duração Vocálica",
+    subtitle: "Diferença entre vogais curtas e longas que alteram completamente o significado das palavras (ex: ship vs sheep).",
+    emoji: "⏱️"
+  },
+  "english_r": {
+    title: "O 'R' do Inglês",
+    subtitle: "Articulação correta do 'r' retroflexo (caipira), sem vibrar a língua contra os dentes ou palato.",
+    emoji: "🦁"
+  },
+  "aspirated_h": {
+    title: "O 'H' Aspirado",
+    subtitle: "Pronúncia do som de sopro suave para o 'H' inicial (ex: house, happy), diferente do 'R' em português.",
+    emoji: "💨"
+  },
+  "t_y_d_y_assimilation": {
+    title: "Assimilação de T/D + Y",
+    subtitle: "Fusão natural onde T+Y soa como 'tch' (meet you) e D+Y soa como 'dj' (would you) no discurso conectado.",
+    emoji: "🤝"
+  },
+  "dark_l": {
+    title: "L Escuro (Dark L)",
+    subtitle: "Pronúncia correta do 'L' em fim de sílaba com a parte de trás da língua elevada (ex: feel, milk), sem soar como 'U'.",
+    emoji: "🌘"
+  },
+  "vowel_quality": {
+    title: "Qualidade das Vogais",
+    subtitle: "Articulação e posicionamento preciso da boca para emitir o timbre correto das diferentes vogais em inglês.",
+    emoji: "🗣️"
+  },
+  "connected_speech": {
+    title: "Discurso Conectado",
+    subtitle: "Junção natural de palavras em frases para fluidez e cadência nativa, unindo sons consonantais e vocálicos.",
+    emoji: "⚡"
+  },
+  "flap_t_d": {
+    title: "Flap T/D (Som de 'R' Suave)",
+    subtitle: "Suavização das letras T e D em som rápido de 'R' simples do português quando estão entre vogais (ex: water, city).",
+    emoji: "🛹"
+  },
+  "schwa": {
+    title: "Som de Schwa (/ə/)",
+    subtitle: "A vogal neutra mais comum e relaxada do inglês, presente em quase todas as sílabas átonas (ex: the, about, family).",
+    emoji: "💤"
+  },
+  "weak_form": {
+    title: "Formas Fracas (Weak Forms)",
+    subtitle: "Redução de pronúncia de palavras funcionais (ex: of, to, and, for) quando não estão enfatizadas na frase.",
+    emoji: "🎈"
+  },
+  "consonant_cluster": {
+    title: "Grupos de Consoantes",
+    subtitle: "Pronúncia sequencial de duas ou mais consoantes seguidas sem inserir vogais de apoio entre elas (ex: street, grasp).",
+    emoji: "🧩"
+  },
+  "epenthesis": {
+    title: "Evitar Epêntese Vocálica",
+    subtitle: "Eliminação do hábito de adicionar o som de 'i' antes ou depois de consoantes mudas (ex: evitar dizer 'is-chool' ou 'book-i').",
+    emoji: "🚫"
+  },
+  "rhythm_stress": {
+    title: "Ritmo e Acentuação",
+    subtitle: "Contraste de tempo entre sílabas fortes (enfatizadas) e fracas (reduzidas), gerando a musicalidade natural da língua.",
+    emoji: "🥁"
   }
 };
 
