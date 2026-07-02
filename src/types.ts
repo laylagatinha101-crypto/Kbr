@@ -164,6 +164,69 @@ export interface LyricsSourceData {
   warning?: string;
 }
 
+export type PracticeItemType = 'line' | 'token' | 'skill';
+
+export type PracticeStatus = 'new' | 'learning' | 'review' | 'mastered';
+
+export type PracticeMode =
+  | 'listen'
+  | 'repeat'
+  | 'shadowing'
+  | 'recording';
+
+export interface UserProgressItem {
+  id: string;
+  projectId: string;
+  lineId: string;
+  tokenId?: string;
+
+  type: PracticeItemType;
+  skillFocus: string[];
+
+  difficulty: 'easy' | 'medium' | 'hard';
+
+  attempts: number;
+  correctAttempts: number;
+
+  bestScore?: number;
+  lastScore?: number;
+
+  easeFactor: number;
+  intervalDays: number;
+
+  dueAt: string;
+  lastReviewedAt?: string;
+
+  status: PracticeStatus;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PracticeAttempt {
+  id: string;
+  projectId: string;
+  lineId: string;
+  tokenId?: string;
+
+  mode: PracticeMode;
+
+  score?: number;
+  selfRating?: 1 | 2 | 3 | 4;
+
+  speed: number;
+  usedPfc: boolean;
+  usedVocalIsolated: boolean;
+
+  createdAt: string;
+}
+
+export interface UserProgressStore {
+  version: 1;
+  items: UserProgressItem[];
+  attempts: PracticeAttempt[];
+}
+
 export interface SongProject {
   id: string;
   metadata: SongMetadata;

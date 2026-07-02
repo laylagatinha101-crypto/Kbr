@@ -189,6 +189,7 @@ interface PracticeModalProps {
   onClose: () => void;
   onPlayOriginal: () => void;
   onNext: () => void;
+  onSelfRate?: (rating: 1 | 2 | 3 | 4) => void;
   onScore: (score: number) => void;
 }
 
@@ -197,7 +198,8 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
   highScore, 
   onClose, 
   onPlayOriginal, 
-  onNext, 
+  onNext,
+  onSelfRate,
   onScore 
 }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -205,6 +207,7 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
   const [feedback, setFeedback] = useState<"success" | "partial" | "poor" | null>(null);
   const [volumes, setVolumes] = useState<number[]>(new Array(20).fill(0));
   const [isSupported, setIsSupported] = useState(true);
+  const [rateFeedback, setRateFeedback] = useState<string | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -397,6 +400,15 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
 
   const alignment = alignSentences(line.original, transcript);
 
+  const handleRate = (rating: 1 | 2 | 3 | 4) => {
+    if (onSelfRate) onSelfRate(rating);
+    setRateFeedback("Registrado!");
+    setTimeout(() => {
+      setRateFeedback(null);
+      onNext();
+    }, 1200);
+  };
+
   return (
     <div 
       onClick={(e) => {
@@ -552,6 +564,27 @@ export const PracticeModal: React.FC<PracticeModalProps> = ({
             <ArrowRight className="w-4 h-4" /> Próxima
           </button>
         </div>
+
+        {onSelfRate && (
+          <div className="mt-5 pt-4 border-t border-white/10 relative">
+            {rateFeedback ? (
+              <div className="flex flex-col items-center justify-center py-3 animate-in fade-in zoom-in duration-300">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
+                <p className="text-sm font-bold text-emerald-400">{rateFeedback}</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-neutral-400 text-center mb-2.5">Autoavaliação (Revisão Espaçada)</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button onClick={() => handleRate(1)} className="py-2 text-[11px] font-bold rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">Errei</button>
+                  <button onClick={() => handleRate(2)} className="py-2 text-[11px] font-bold rounded bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors">Quase</button>
+                  <button onClick={() => handleRate(3)} className="py-2 text-[11px] font-bold rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors">Acertei</button>
+                  <button onClick={() => handleRate(4)} className="py-2 text-[11px] font-bold rounded bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 transition-colors">Fácil</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </motion.div>
     </div>
   );

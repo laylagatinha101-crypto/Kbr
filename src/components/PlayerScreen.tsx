@@ -9,6 +9,7 @@ import { projectStorage } from "../services/projectStorage";
 import { exportService, hasStudyData } from "../services/exportService";
 import { PracticeModal } from "./PracticeModal";
 import { Waveform } from "./player/Waveform";
+import { useUserProgress } from "../hooks/useUserProgress";
 
 const formatClock = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -30,6 +31,11 @@ interface PlayerScreenProps {
   onPrevious?: () => void;
   queueInfo?: string;
   shouldAutoplay?: boolean;
+  initialPracticeLineId?: string;
+  smartReviewQueue?: { projectId: string; lineId: string }[];
+  smartReviewIndex?: number;
+  onNextSmartReview?: () => void;
+  onPrevSmartReview?: () => void;
 }
 
 interface StudyTokenSelection {
@@ -139,7 +145,12 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
   onNext,
   onPrevious,
   queueInfo,
-  shouldAutoplay
+  shouldAutoplay,
+  initialPracticeLineId,
+  smartReviewQueue,
+  smartReviewIndex,
+  onNextSmartReview,
+  onPrevSmartReview
 }) => {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -152,6 +163,7 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
   const [muted, setMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [volume, setVolume] = useState(1);
+  const { registerAttempt } = useUserProgress();
   
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioLoadState, setAudioLoadState] = useState<"idle" | "loading" | "ready" | "missing" | "error">("idle");
@@ -178,7 +190,19 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
     setSyncOffset(project.syncOffset || 0);
     setDuration(project.metadata?.duration || 0);
     setSelectedStudyToken(null);
-    setPracticeLineIndex(null);
+    
+    if (initialPracticeLineId) {
+      const idx = project.lines.findIndex(l => l.id === initialPracticeLineId);
+      if (idx >= 0) {
+        setPracticeLineIndex(idx);
+        setPlayerMode("study");
+      } else {
+        setPracticeLineIndex(null);
+      }
+    } else {
+      setPracticeLineIndex(null);
+    }
+    
     setStudyLoop(null);
     setExpandedDrillLineId(null);
     setExpandedCuesLineId(null);
@@ -1181,6 +1205,8 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
                style={{ width: "100%", height: "100%", scrollbarWidth: "none", msOverflowStyle: "none" }}
                data={project.lines}
                itemContent={renderVirtuosoItem}
+               overscan={10}
+               computeItemKey={(index, item) => item.id || index.toString()}
                components={{
                  Header: () => <div className="h-[22vh] md:h-[28vh] lg:h-[35vh]" />,
                  Footer: () => <div className="h-[22vh] md:h-[28vh] lg:h-[35vh]" />
@@ -1205,12 +1231,28 @@ export const PlayerScreen: React.FC<PlayerScreenProps> = ({
                }
             }}
             onNext={() => {
-              const nextIndex = practiceLineIndex + 1;
-              if (nextIndex < project.lines.length) {
-                setPracticeLineIndex(nextIndex);
+              if (smartReviewQueue && onNextSmartReview) {
+                onNextSmartReview();
               } else {
-                setPracticeLineIndex(null);
+                const nextIndex = practiceLineIndex + 1;
+                if (nextIndex < project.lines.length) {
+                  setPracticeLineIndex(nextIndex);
+                } else {
+                  setPracticeLineIndex(null);
+                }
               }
+            }}
+            onSelfRate={(rating) => {
+              const line = project.lines[practiceLineIndex];
+              registerAttempt({
+                projectId: project.id,
+                lineId: line.id,
+                mode: 'listen',
+                selfRating: rating,
+                speed: 1,
+                usedPfc: true,
+                usedVocalIsolated: false
+              }, line.study?.skillFocus || [], line.study?.difficulty || 'medium');
             }}
             onScore={(score) => {
               const baseProject = projectRef.current;
