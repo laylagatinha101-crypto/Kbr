@@ -1,0 +1,8 @@
+{
+  "name": "Karaokê BR Multilayer 1",
+  "description": "Cante músicas em inglês com a pronúncia abrasileirada (PFC) guiada por IA, tradução e fonemas sincronizados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
