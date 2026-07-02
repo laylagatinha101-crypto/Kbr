@@ -60,6 +60,16 @@ export async function importLibraryZip(
       }
     });
 
+    if (projectFiles.length === 0) {
+      result.errors.push({ folder: "Geral", reason: "O ZIP está vazio ou não contém arquivos project.json." });
+      return result;
+    }
+
+    if (projectFiles.length > 100) {
+      result.errors.push({ folder: "Geral", reason: "O ZIP excede o limite de 100 projetos." });
+      return result;
+    }
+
     const total = projectFiles.length;
     let current = 0;
 
@@ -78,9 +88,23 @@ export async function importLibraryZip(
         }
         if (!projectData.metadata.title) projectData.metadata.title = folderName;
         if (!projectData.metadata.artist) projectData.metadata.artist = "Artista desconhecido";
-        if (!projectData.lines || projectData.lines.length === 0) {
-          result.errors.push({ folder: folderName, reason: "project.json não possui linhas (lines)" });
+        
+        if (!projectData.lines || !Array.isArray(projectData.lines) || projectData.lines.length === 0) {
+          result.errors.push({ folder: folderName, reason: "project.json não possui linhas (array vazio ou inválido)." });
           continue;
+        }
+
+        // Minimal validation of lines to avoid crashing player
+        let invalidLines = false;
+        for (const line of projectData.lines) {
+          if (typeof line.start !== 'number' || isNaN(line.start)) {
+             invalidLines = true;
+             break;
+          }
+        }
+        if (invalidLines) {
+           result.errors.push({ folder: folderName, reason: "Algumas linhas não possuem 'start' (tempo) numérico válido." });
+           continue;
         }
 
         const id = generateId(projectData, folderName);
@@ -116,11 +140,16 @@ export async function importLibraryZip(
         }
 
         if (!mainAudioFile) {
-          result.errors.push({ folder: folderName, reason: "Arquivo de áudio não encontrado na mesma pasta" });
+          result.errors.push({ folder: folderName, reason: "Arquivo de áudio principal não encontrado." });
           continue;
         }
 
         const audioBlobData = await mainAudioFile.async("blob");
+        if (audioBlobData.size === 0) {
+          result.errors.push({ folder: folderName, reason: "O arquivo de áudio principal está vazio (0 bytes)." });
+          continue;
+        }
+
         const audioMimeType = getMimeType(mainAudioFile.name);
         const audioBlob = new Blob([audioBlobData], { type: audioMimeType });
         
@@ -129,18 +158,23 @@ export async function importLibraryZip(
         let vocalsBlob: Blob | undefined;
         if (vocalsFile) {
           const vocalsBlobData = await vocalsFile.async("blob");
-          const vocalsMimeType = getMimeType(vocalsFile.name);
-          vocalsBlob = new Blob([vocalsBlobData], { type: vocalsMimeType });
-          projectData.vocalsBlobId = `vocals_${id}`;
+          if (vocalsBlobData.size > 0) {
+            const vocalsMimeType = getMimeType(vocalsFile.name);
+            vocalsBlob = new Blob([vocalsBlobData], { type: vocalsMimeType });
+            projectData.vocalsBlobId = `vocals_${id}`;
+          }
         }
 
         // Save
         await projectStorage.saveProject(projectData as SongProject, audioBlob, vocalsBlob);
         result.imported++;
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error importing project in folder", folderPath, err);
-        result.errors.push({ folder: folderName, reason: "Erro ao processar arquivos ou JSON inválido" });
+        const reason = err.name === 'QuotaExceededError' 
+            ? "Armazenamento insuficiente no navegador (Quota excedida)."
+            : "Erro ao processar JSON ou arquivos internos.";
+        result.errors.push({ folder: folderName, reason });
       }
 
       if (onProgress) {

@@ -41,6 +41,28 @@ export const dbService = {
     await db.put('projects', project);
   },
 
+  async saveProjectWithBlobs(project: SongProject, audioBlob?: Blob, vocalsBlob?: Blob): Promise<void> {
+    const db = await getDB();
+    const tx = db.transaction(['projects', 'audioBlobs'], 'readwrite');
+    
+    try {
+      if (audioBlob && project.audioBlobId) {
+        await tx.objectStore('audioBlobs').put(audioBlob, project.audioBlobId);
+      }
+      if (vocalsBlob && project.vocalsBlobId) {
+        await tx.objectStore('audioBlobs').put(vocalsBlob, project.vocalsBlobId);
+      }
+      await tx.objectStore('projects').put(project);
+      await tx.done;
+    } catch (err: any) {
+      tx.abort();
+      if (err.name === 'QuotaExceededError') {
+        throw new Error("Armazenamento insuficiente. Limpe alguns projetos antigos para salvar novos (QuotaExceededError).");
+      }
+      throw err;
+    }
+  },
+
   async getProject(id: string): Promise<SongProject | undefined> {
     const db = await getDB();
     return db.get('projects', id);
@@ -54,15 +76,30 @@ export const dbService = {
   async deleteProject(id: string): Promise<void> {
     const db = await getDB();
     const project = await db.get('projects', id);
-    if (project && project.audioBlobId) {
-      await db.delete('audioBlobs', project.audioBlobId);
+    const tx = db.transaction(['projects', 'audioBlobs'], 'readwrite');
+    
+    if (project) {
+      if (project.audioBlobId) {
+        tx.objectStore('audioBlobs').delete(project.audioBlobId);
+      }
+      if (project.vocalsBlobId) {
+        tx.objectStore('audioBlobs').delete(project.vocalsBlobId);
+      }
+      tx.objectStore('projects').delete(id);
     }
-    await db.delete('projects', id);
+    await tx.done;
   },
 
   async saveAudioBlob(id: string, blob: Blob): Promise<void> {
     const db = await getDB();
-    await db.put('audioBlobs', blob, id);
+    try {
+      await db.put('audioBlobs', blob, id);
+    } catch (err: any) {
+      if (err.name === 'QuotaExceededError') {
+        throw new Error("Armazenamento insuficiente (QuotaExceededError).");
+      }
+      throw err;
+    }
   },
 
   async getAudioBlob(id: string): Promise<Blob | undefined> {

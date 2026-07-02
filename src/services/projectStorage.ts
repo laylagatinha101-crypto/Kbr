@@ -3,12 +3,10 @@ import { SongProject } from "../types";
 
 export const projectStorage = {
   async saveProject(project: SongProject, audioBlob?: Blob, vocalsBlob?: Blob): Promise<void> {
-    await dbService.saveProject(project);
-    if (audioBlob && project.audioBlobId) {
-      await dbService.saveAudioBlob(project.audioBlobId, audioBlob);
-    }
-    if (vocalsBlob && project.vocalsBlobId) {
-      await dbService.saveAudioBlob(project.vocalsBlobId, vocalsBlob);
+    if (audioBlob || vocalsBlob) {
+      await dbService.saveProjectWithBlobs(project, audioBlob, vocalsBlob);
+    } else {
+      await dbService.saveProject(project);
     }
   },
 

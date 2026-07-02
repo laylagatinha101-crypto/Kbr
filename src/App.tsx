@@ -46,6 +46,13 @@ function App() {
     }
   };
 
+  const [shouldAutoplay, setShouldAutoplay] = useState(false);
+
+  const handleUpdateProject = (updatedProject: SongProject) => {
+    setActiveProject(prev => prev ? { ...prev, project: updatedProject } : null);
+    setQueue(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+  };
+
   const handleNextSong = async () => {
     if (queueIndex < 0 || queueIndex >= queue.length - 1) return;
     const nextIndex = queueIndex + 1;
@@ -56,6 +63,7 @@ function App() {
       const blob = await dbService.getAudioBlob(nextProject.audioBlobId);
       if (blob) {
         setQueueIndex(nextIndex);
+        setShouldAutoplay(true);
         setActiveProject({ project: nextProject, audioBlob: blob });
       }
     } catch (err) {
@@ -73,6 +81,7 @@ function App() {
       const blob = await dbService.getAudioBlob(prevProject.audioBlobId);
       if (blob) {
         setQueueIndex(prevIndex);
+        setShouldAutoplay(true);
         setActiveProject({ project: prevProject, audioBlob: blob });
       }
     } catch (err) {
@@ -84,8 +93,10 @@ function App() {
     // If this project is played directly, check if it's in the queue
     const indexInQueue = queue.findIndex(p => p.id === project.id);
     setQueueIndex(indexInQueue);
+    setShouldAutoplay(false); // Do not autoplay when manually opened unless we want it to. Usually opening manual might not autoplay or could autoplay. Let's make manual open NOT autoplay by default, or maybe it should. Let's look at how Library currently does it. Wait, when user clicks a song to open, they probably want it to play. Actually, if they click "play" icon on library it plays. Let's set it to false for now and let the user click play inside.
     setActiveProject({ project, audioBlob });
   };
+
 
   const hasNext = queueIndex >= 0 && queueIndex < queue.length - 1;
   const hasPrevious = queueIndex > 0;
@@ -109,11 +120,13 @@ function App() {
           project={activeProject.project} 
           audioBlob={activeProject.audioBlob} 
           onBack={() => setActiveProject(null)} 
+          onUpdateProject={handleUpdateProject}
           hasNext={hasNext}
           hasPrevious={hasPrevious}
           onNext={hasNext ? handleNextSong : undefined}
           onPrevious={hasPrevious ? handlePreviousSong : undefined}
           queueInfo={queueInfo}
+          shouldAutoplay={shouldAutoplay}
         />
       )}
     </>
